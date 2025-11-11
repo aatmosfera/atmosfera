@@ -55,4 +55,7 @@ steps:
       
         echo 'Hello world'
         echo $GOOGLE_APPLICATION_CREDENTIALS
+        # Force gcloud to use the WIF credential file explicitly
+        gcloud auth login --cred-file="$GOOGLE_APPLICATION_CREDENTIALS"
+        gcloud config get-value account
         gcloud projects list
