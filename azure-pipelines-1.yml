@@ -45,3 +45,14 @@ steps:
           "service_account_impersonation_url": "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/$(GoogleCloud.WorkloadIdentity.ServiceAccount):generateAccessToken"
         }
         EOF
+        echo 'Oi'
+        echo $GOOGLE_APPLICATION_CREDENTIALS
+  - task: Bash@3
+    inputs:
+      targetType: 'inline'
+      script: |
+        # Write your commands here
+      
+        echo 'Hello world'
+        echo $GOOGLE_APPLICATION_CREDENTIALS
+        gcloud projects list
