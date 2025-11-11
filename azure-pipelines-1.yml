@@ -10,11 +10,38 @@ pool:
   name: Default
   vmImage: ubuntu-latest
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+variables:
+- name: Azure.WorkloadIdentity.Connection
+  value: google-cloud
+- name: GoogleCloud.WorkloadIdentity.ProjectNumber
+  value: 239603214487
+- name: GoogleCloud.WorkloadIdentity.Pool
+  value: atmosfera-azuredevops-pool
+- name: GoogleCloud.WorkloadIdentity.Provider
+  value: atmosfera-devops
+- name: GoogleCloud.WorkloadIdentity.ServiceAccount
+  value: azuredevops@atmosfera-ccoe.iam.gserviceaccount.com
+- name: GOOGLE_APPLICATION_CREDENTIALS
+  value: $(Pipeline.Workspace)/.workload_identity.wlconfig
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+steps:
+  - task: AzureCLI@2
+    inputs:
+      connectedServiceNameARM: $(Azure.WorkloadIdentity.Connection)
+      addSpnToEnvironment: true
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo $idToken > $(Pipeline.Workspace)/.workload_identity.jwt
+        cat << EOF > $GOOGLE_APPLICATION_CREDENTIALS
+        {
+          "type": "external_account",
+          "audience": "//iam.googleapis.com/projects/$(GoogleCloud.WorkloadIdentity.ProjectNumber)/locations/global/workloadIdentityPools/$(GoogleCloud.WorkloadIdentity.Pool)/providers/$(GoogleCloud.WorkloadIdentity.Provider)",
+          "subject_token_type": "urn:ietf:params:oauth:token-type:jwt",
+          "token_url": "https://sts.googleapis.com/v1/token",
+          "credential_source": {
+            "file": "$(Pipeline.Workspace)/.workload_identity.jwt"
+          },
+          "service_account_impersonation_url": "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/$(GoogleCloud.WorkloadIdentity.ServiceAccount):generateAccessToken"
+        }
+        EOF
